@@ -96,8 +96,6 @@ public func part2() {
                 topRight != "X", topRight != "A",
                 let bottomLeft = charAt(row: rowIndex+1, column: columnIndex-1),
                 bottomLeft != "X", bottomLeft != "A",
-                let bottomRight = charAt(row: rowIndex+1, column: columnIndex+1),
-                bottomRight != "X", bottomRight != "A"
                 else {
                     return
                 }
