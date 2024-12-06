@@ -38,6 +38,46 @@ class Guard {
         }
     }
     
+    var deltaForRightTurn: (Int, Int) {
+        switch guardd.facing {
+        case .up:
+            return (1, 0)
+        case .down:
+            return (-1, 0)
+        case .left:
+            return (0, 1)
+        case .right:
+            return (0, -1)
+        }
+    }
+    
+    var symbol: String {
+        switch guardd.facing {
+            case .up:
+                "U"
+            case .down:
+                "D"
+            case .left:
+                "L"
+            case .right:
+                "R"
+        }
+    }
+    
+    var nextSymbol: String {
+        if symbol == "U" {
+            return "R"
+        } else if symbol == "D" {
+            return "L"
+        } else if symbol == "R" {
+            return "D"
+        } else if symbol == "L" {
+            return "U"
+        }
+        
+        return "P" // this will never happen
+    }
+    
     enum Direction {
         case up
         case down
@@ -46,11 +86,11 @@ class Guard {
     }
 }
 
-nonisolated(unsafe) var map: [[Character]] = []
+nonisolated(unsafe) var map: [[String]] = []
 nonisolated(unsafe) var guardd: Guard = .init(x: 0, y: 0, facing: .up)
 
 public func setup() {
-    let inputRows = inputString.split(separator: "\n")
+    let inputRows = testString.split(separator: "\n")
     for (y, row) in inputRows.enumerated() {
         if let xIndex = row.firstIndex(where: { $0 == "^" }) {
             let x = row.distance(from: row.startIndex, to: xIndex)
@@ -58,7 +98,7 @@ public func setup() {
         }
         
         map.append(row.map {
-            $0 == "^" ? "X" : $0 // replace guard start with X
+            $0 == "^" ? String("U") : String($0) // replace guard start with X
         })
         
     }
@@ -92,6 +132,62 @@ public func part1() {
         }
     } while !reachedTheEnd
     
+//    printMap(map)
+    print("Part 1 answer: \(count)")
+}
+
+public func part2() {
+    setup()
+    var count = 0
+    var reachedTheEnd = false
+    repeat {
+        let (dx, dy) = guardd.delta
+        guard canMove(x: guardd.x + dx, y: guardd.y + dy)
+        else {
+            reachedTheEnd = true
+            break
+        }
+
+        let nextSquare = map[guardd.y + dy][guardd.x + dx]
+        if nextSquare == "#" {
+            guardd.turn()
+        } else {
+            // check right path
+            let (rightDx, rightDy) = guardd.deltaForRightTurn
+            var tempPosition: (Int, Int) = (guardd.x, guardd.y)
+            while (true) {
+                guard
+                    canMove(x: tempPosition.0 + rightDx, y: tempPosition.1 + rightDy),
+                    map[tempPosition.0 + rightDx][tempPosition.1 + rightDy] != "#"
+                else { break }
+                
+                if map[tempPosition.0 + rightDx][tempPosition.1 + rightDy].contains(guardd.nextSymbol) {
+                    if map[guardd.x + dx][guardd.y + dy] == "." {
+                        map[guardd.x + dx][guardd.y + dy] = "O"
+                    } else {
+                        map[guardd.x + dx][guardd.y + dy].append("O")
+                    }
+                    count += 1
+                    break
+//                    printMap(map)
+//                    return
+                }
+                tempPosition = (tempPosition.0 + rightDx, tempPosition.1 + rightDy)
+            }
+            
+            // do normal guard movement
+            if nextSquare == "." {
+                map[guardd.y + dy][guardd.x + dx] = guardd.symbol
+            } else {
+                
+                map[guardd.y + dy][guardd.x + dx] = map[guardd.y + dy][guardd.x + dx].appending(guardd.symbol)
+            }
+            guardd.x += dx
+            guardd.y += dy
+        }
+        
+    } while !reachedTheEnd
+    
     printMap(map)
     print("Part 1 answer: \(count)")
 }
@@ -100,10 +196,10 @@ func canMove(x: Int, y: Int) -> Bool {
     x >= 0 && x < map[0].count && y >= 0 && y < map.count
 }
 
-func printMap(_ map: [[Character]]) {
+func printMap(_ map: [[String]]) {
     print("******************************")
     for row in map {
-        print(row.reduce(into: "", { str, char in str.append(" \(char)") }))
+        print(row.reduce(into: "", { str, char in str.append("   \(char)") }))
     }
     print("******************************")
 }
